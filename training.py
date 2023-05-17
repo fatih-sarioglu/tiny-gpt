@@ -10,7 +10,7 @@ learning_rate = 1e-2
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_iters = 200
 
-torch.manual_seed(31)
+torch.manual_seed(32)
 
 #wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
 with open('input.txt', 'r', encoding='utf-8') as file:
@@ -60,7 +60,7 @@ def estimate_loss():
             X, Y = get_batch(split)
             logits, loss = model(X, Y)
             losses[k] = loss.item()
-        out['split'] = loss.mean()
+        out[split] = loss.mean()
     model.train()
     return out
 
@@ -120,4 +120,4 @@ for iter in range(max_iters):
     optimizer.step()
 
 context = torch.zeros((1,1), dtype=torch.long, device=device)
-print(decode(m.generate(context), max_tokens=100)[0].tolist())
+print(decode(m.generate(context, max_tokens=500)[0].tolist()))
