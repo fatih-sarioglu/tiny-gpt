@@ -9,6 +9,7 @@ eval_interval = 300
 learning_rate = 1e-2
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_iters = 200
+num_embd = 32
 
 torch.manual_seed(32)
 
@@ -66,14 +67,16 @@ def estimate_loss():
 
 
 class BigramLanguageModel(nn.Module):
-    def __init__(self, vocab_size):
+    def __init__(self):
         super().__init__()
         # each token reads the logit for the next token
-        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
+        self.token_embedding_table = nn.Embedding(vocab_size, num_embd)
+        self.lm_head = nn.Linear(num_embd, vocab_size)
         
     def forward(self, idx, targets=None):
         # idx and targets are both (B,T) tensor of integers
-        logits = self.token_embedding_table(idx) # (B,T,C)
+        tok_emb = self.token_embedding_table(idx) # (B,T,C)
+        logits = self.lm_head(tok_emb) # (B,T,vocab_size)
         
         if targets is None: # to successfully run the generate func
             loss = None
@@ -100,7 +103,7 @@ class BigramLanguageModel(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1) # becomes (B,T+1)
         return idx
 
-model = BigramLanguageModel(vocab_size)
+model = BigramLanguageModel()
 m = model.to(device)
 
 # create optimizer
