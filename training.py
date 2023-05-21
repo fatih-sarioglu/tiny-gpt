@@ -30,11 +30,9 @@ decode = lambda i: ''.join([itos[j] for j in i])
 
 data = torch.tensor(encode(text), dtype=torch.long)
 # train/val/test split
-n1 = int(0.8*len(data))
-n2 = int(0.9*len(data))
+n1 = int(0.9*len(data))
 train_set = data[:n1]
-val_set = data[n1:n2]
-test_set = data[n2:]
+val_set = data[n1:]
 
 def get_batch(data, batch_size=4, block_size=8): # 4 different chunks with context size of 8
     # specifying the dataset
@@ -42,8 +40,6 @@ def get_batch(data, batch_size=4, block_size=8): # 4 different chunks with conte
         data = train_set
     elif data =='val':
         data = val_set
-    else:
-        data = test_set
     
     ix = torch.randint(len(data) - block_size, (batch_size,))
     x = torch.stack([data[i:i+block_size] for i in ix])
