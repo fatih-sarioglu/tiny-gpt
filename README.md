@@ -1,2 +1,2 @@
 # tiny-gpt
-My version of @karpathy's nano-gpt.
+My implementation of @karpathy's nano-gpt.
