@@ -14,7 +14,7 @@ num_head = 6
 num_layer = 6
 dropout = 0.2
 
-torch.manual_seed(3123123)
+torch.manual_seed(31223)
 
 #wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
 with open('input.txt', 'r', encoding='utf-8') as file:
@@ -73,7 +73,7 @@ class Head(nn.Module):
         self.key = nn.Linear(num_emb, head_size, bias=False)
         self.query = nn.Linear(num_emb, head_size, bias=False)
         self.value = nn.Linear(num_emb, head_size, bias=False)
-        self.register_buffer('tril', torch.tril(torch.ones((block_size, block_size))))
+        self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
 
         self.dropout = nn.Dropout(dropout)
 
@@ -104,7 +104,7 @@ class MultiHeadAttention(nn.Module):
 
     def forward(self, x):
         out = torch.cat([h(x) for h in self.heads], dim=-1)
-        out = self.proj(out)
+        out = self.dropout(self.proj(out))
         return out
 
 
@@ -151,12 +151,7 @@ class BigramLanguageModel(nn.Module):
         self.token_embedding_table = nn.Embedding(vocab_size, num_emb)
         self.position_embedding_table = nn.Embedding(block_size, num_emb)
         self.blocks = nn.Sequential(*[Block(num_emb, num_head) for _ in range(num_layer)])
-        self.blocks = nn.Sequential(
-            Block(num_emb, num_head=4),
-            Block(num_emb, num_head=4),
-            Block(num_emb, num_head=4),
-            nn.LayerNorm(num_emb)
-        )
+        self.ln_f = nn.LayerNorm(num_emb)
         self.lm_head = nn.Linear(num_emb, vocab_size)
         
     def forward(self, idx, targets=None):
@@ -167,6 +162,7 @@ class BigramLanguageModel(nn.Module):
         pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T,C)
         x = tok_emb + pos_emb # (B,T,C)
         x = self.blocks(x) # (B,T,C)
+        x = self.ln_f(x)
         logits = self.lm_head(x) # (B,T,vocab_size)
         
         if targets is None: # to successfully run the generate func
@@ -198,6 +194,8 @@ class BigramLanguageModel(nn.Module):
 
 model = BigramLanguageModel()
 m = model.to(device)
+# print the number of parameters in the model
+print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
 
 # create optimizer
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
